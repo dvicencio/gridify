@@ -1,0 +1,158 @@
+---
+title: "Shiny Integration"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Shiny Integration}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  eval     = FALSE
+)
+```
+
+## Why `gridify` needs `plotOutput`, not `table_with_settings`
+
+[GitHub Issue #8](https://github.com/pharmaverse/gridify/issues/8)
+reports that `gridify` output cannot be rendered inside
+`teal.widgets::table_with_settings_srv`.
+
+The reason is straightforward:
+
+> `gridify()` always returns a **grid graphical object**. It must be
+> displayed with `plotOutput` / `renderPlot`, **not** with
+> `table_with_settings_srv`, which expects an `rtable` or similar
+> data-frame-like object.
+
+The `gridify_with_settings` module solves this by wrapping `plotOutput`
+and `renderPlot` in a reusable Shiny module that also provides
+interactive height and width sliders and PNG / PDF download buttons.
+
+---
+
+## The `gridify_with_settings` module
+
+The module consists of two functions:
+
+- **`gridify_with_settings_ui(id)`** — the UI side, built as a
+  `sidebarLayout` with sliders and download buttons on the left and a
+  dynamic plot panel on the right.
+
+- **`gridify_with_settings_srv(id, gridify_r, height, width)`** — the
+  server side. `gridify_r` must be a `shiny::reactive()` that returns a
+  `gridifyClass` object (the result of `gridify()`). `height` and
+  `width` each take a `numeric(3)` vector of `c(value, min, max)`;
+  defaults are `c(600L, 200L, 2000L)` and `c(800L, 200L, 2000L)`
+  respectively.
+
+---
+
+## Example 1 — ggplot2 figure with `pharma_layout_base()`
+
+This mirrors the pharma layout example shown in the
+[Simple Examples](simple_examples.html) vignette, wrapped in a Shiny
+app. See that vignette for the full list of available cells and layout
+options.
+
+```{r ggplot_shiny}
+library(shiny)
+library(ggplot2)
+library(gridify)
+
+ui <- fluidPage(
+  titlePanel("gridify + Shiny: ggplot2 figure"),
+  gridify_with_settings_ui("gg_demo")
+)
+
+server <- function(input, output, session) {
+  gridify_r <- reactive({
+    gridify(
+      object = ggplot2::ggplot(mtcars, aes(x = mpg, y = wt)) +
+        ggplot2::geom_point(),
+      layout = pharma_layout_base()
+    ) |>
+      set_cell("header_left_1", "My Company") |>
+      set_cell("header_left_2", "PROJECT / INDICATION") |>
+      set_cell("header_left_3", "STUDY") |>
+      set_cell("title_1", "Weight vs Fuel Efficiency") |>
+      set_cell("footer_left", paste("Program: my_script.R,", Sys.Date())) |>
+      set_cell("footer_right", "Page 1 of 1") |>
+      set_cell("watermark", "DRAFT")
+  })
+
+  gridify_with_settings_srv("gg_demo", gridify_r = gridify_r)
+}
+
+shinyApp(ui, server)
+```
+
+---
+
+## Example 2 — `rtable` rendered via `gridify` (Issue #8 scenario)
+
+`gridify` now supports `rtables` objects directly — the conversion is handled internally.
+Pass the `rtable` straight to `gridify()` just like any other object type.
+
+> **Note:** the internal conversion uses `rtables.officer::tt_to_flextable()` with
+> default settings. If you need to customise the font, padding, or borders, convert
+> manually to a `flextable` first (see the [Simple Examples](simple_examples.html)
+> vignette for the step-by-step approach).
+
+```{r rtable_shiny}
+library(shiny)
+library(gridify)
+library(rtables)  # install.packages("rtables")
+
+ui <- fluidPage(
+  titlePanel("gridify + Shiny: rtable (Issue #8)"),
+  gridify_with_settings_ui("rt_demo")
+)
+
+server <- function(input, output, session) {
+  gridify_r <- reactive({
+
+    # Build the rtable
+    tbl <- rtables::basic_table(main_footer = " ") |>
+      rtables::split_cols_by("Species") |>
+      rtables::analyze(
+        c("Sepal.Length", "Sepal.Width", "Petal.Length"),
+        function(x, ...) {
+          rtables::in_rows(
+            "Mean (sd)" = c(mean(x), sd(x)),
+            "Median"    = median(x),
+            "Min - Max" = range(x),
+            .formats = c("xx.xx (xx.xx)", "xx.xx", "xx.xx - xx.xx")
+          )
+        }
+      ) |>
+      rtables::build_table(iris)
+
+    # Pass directly to gridify — no manual flextable conversion needed
+    gridify(
+      object = tbl,
+      layout = pharma_layout_base()
+    ) |>
+      set_cell("header_left_1", "My Company") |>
+      set_cell("header_left_2", "PROJECT / INDICATION") |>
+      set_cell("header_left_3", "STUDY") |>
+      set_cell("title_1", "Summary Statistics for Iris Dataset") |>
+      set_cell("footer_left", paste("Program: my_script.R,", Sys.Date())) |>
+      set_cell("footer_right", "Page 1 of 1") |>
+      set_cell("watermark", "DRAFT")
+  })
+
+  gridify_with_settings_srv("rt_demo", gridify_r = gridify_r)
+}
+
+shinyApp(ui, server)
+```

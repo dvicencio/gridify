@@ -7,7 +7,10 @@
 gridify(object = grid::nullGrob(), layout, elements = list(), ...)
 }
 \arguments{
-\item{object}{A grob or ggplot2, gt, flextable, formula object. Default is \code{grid::nullGrob()}.}
+\item{object}{A grob or ggplot2, gt, flextable, rtables (\code{VTableTree}), or formula object.
+\code{rtables} objects are automatically converted to a grob via \code{rtables.officer::tt_to_flextable()}
+and \code{flextable::gen_grob()}. For full control over the flextable aesthetics (font, padding,
+borders), convert manually before passing to \code{gridify()}. Default is \code{grid::nullGrob()}.}
 
 \item{layout}{A gridifyLayout object or a function that returns a gridifyLayout object.
 You can use predefined layouts; the \code{get_layouts()} function prints names of available layouts.
@@ -26,7 +29,7 @@ A gridifyClass object.
 \description{
 This function creates a gridify object, which represents an object with a
 specific layout and text elements around the output.
-The object can be a grob, ggplot2, gt, flextable, formula object. The layout can be a gridifyLayout object or
+The object can be a grob, ggplot2, gt, flextable, rtables, or formula object. The layout can be a gridifyLayout object or
 a function that returns a gridifyLayout object.
 }
 \details{

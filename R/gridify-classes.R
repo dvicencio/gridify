@@ -517,10 +517,13 @@ setValidity("gridifyClass", function(object) {
 #'
 #' This function creates a gridify object, which represents an object with a
 #' specific layout and text elements around the output.
-#' The object can be a grob, ggplot2, gt, flextable, formula object. The layout can be a gridifyLayout object or
+#' The object can be a grob, ggplot2, gt, flextable, rtables, or formula object. The layout can be a gridifyLayout object or
 #' a function that returns a gridifyLayout object.
 #'
-#' @param object A grob or ggplot2, gt, flextable, formula object. Default is `grid::nullGrob()`.
+#' @param object A grob or ggplot2, gt, flextable, rtables (`VTableTree`), or formula object.
+#'   `rtables` objects are automatically converted to a grob via `rtables.officer::tt_to_flextable()`
+#'   and `flextable::gen_grob()`. For full control over the flextable aesthetics (font, padding,
+#'   borders), convert manually before passing to `gridify()`. Default is `grid::nullGrob()`.
 #' @param layout A gridifyLayout object or a function that returns a gridifyLayout object.
 #' You can use predefined layouts; the `get_layouts()` function prints names of available layouts.
 #' You can create your own layout, please read `vignette("create_custom_layout", package = "gridify")`
@@ -589,7 +592,7 @@ gridify <- function(
   ...
 ) {
   # Check the classes of the inputs
-  accepted_classes <- c("grob", "ggplot", "flextable", "gt_tbl", "formula")
+  accepted_classes <- c("grob", "ggplot", "flextable", "gt_tbl", "VTableTree", "formula")
   if (!(inherits(object, accepted_classes))) {
     stop(sprintf(
       "object argument of gridify has to be one of %s class.",
@@ -635,6 +638,22 @@ gridify <- function(
       object <- gt::as_gtable(object)
     } else {
       stop("Please install gt >= 0.11.0 to use it in gridify, as it depends on gt::as_gtable.")
+    }
+  }
+
+  if (inherits(object, "VTableTree")) {
+    if (
+      requireNamespace("rtables.officer", quietly = TRUE) &&
+        requireNamespace("flextable", quietly = TRUE) &&
+        (utils::packageVersion("flextable") >= "0.8.0")
+    ) {
+      object <- flextable::gen_grob(
+        rtables.officer::tt_to_flextable(object, theme = NULL)
+      )
+    } else {
+      stop(
+        "Please install rtables.officer and flextable >= 0.8.0 to use rtables in gridify."
+      )
     }
   }
 

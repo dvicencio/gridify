@@ -28,6 +28,24 @@ test_that("gridify accepts ggplot2 or grob for the object argument", {
   expect_error(result <- gridify(object = grid::nullGrob(), layout = simple_layout()), NA)
 })
 
+test_that("gridify accepts rtables (VTableTree) objects directly", {
+  skip_if_not_installed("rtables")
+  skip_if_not_installed("rtables.officer")
+  skip_if_not_installed("flextable")
+
+  rtabl <- rtables::basic_table() |>
+    rtables::split_cols_by("Species") |>
+    rtables::analyze("Sepal.Length") |>
+    rtables::build_table(iris)
+
+  expect_true(inherits(rtabl, "VTableTree"))
+  expect_error(
+    result <- gridify(object = rtabl, layout = simple_layout()),
+    NA
+  )
+  expect_s4_class(result, "gridifyClass")
+})
+
 test_that("gridify accepts gridifyLayout or name of a function which returns such", {
   plot_obj <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) +
     ggplot2::geom_point()
@@ -43,7 +61,7 @@ test_that("gridify returns informative errors", {
       object = 2,
       layout = simple_layout()
     ),
-    "object argument of gridify has to be one of grob, ggplot, flextable, gt_tbl, formula class"
+    "object argument of gridify has to be one of grob, ggplot, flextable, gt_tbl, VTableTree, formula class"
   )
   expect_error(
     result <- gridify(
