@@ -8,12 +8,10 @@
 #' inside a `plotOutput`, together with interactive height and width sliders and
 #' PNG / PDF download buttons.
 #'
-#' This solves the common confusion described in
-#' \href{https://github.com/pharmaverse/gridify/issues/8}{Issue #8}: a
-#' gridified object is always a **grid graphical object** and must therefore be
-#' displayed using `plotOutput` / `renderPlot`, not with
-#' `teal.widgets::table_with_settings_srv`.  The module wraps that requirement
-#' in a reusable, self-contained Shiny module.
+#' Because `gridify()` always returns a **grid graphical object**, it must be
+#' displayed using `plotOutput` / `renderPlot`. This module wraps that requirement
+#' in a reusable, self-contained Shiny module compatible with any `gridify` output
+#' type: `ggplot2` figures, base R figures, `flextable`, `gt`, and `rtables`.
 #'
 #' @param id (`character(1)`) Shiny module id.
 #'
