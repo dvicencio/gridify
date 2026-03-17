@@ -31,8 +31,6 @@ The `gridify_with_settings` module wraps this requirement in a reusable,
 self-contained Shiny module that works with any `gridify` output type:
 `ggplot2` figures, base R figures, `flextable`, `gt`, and `rtables`.
 
----
-
 ## The `gridify_with_settings` module
 
 The module consists of two functions:
@@ -48,9 +46,8 @@ The module consists of two functions:
   defaults are `c(600L, 200L, 2000L)` and `c(800L, 200L, 2000L)`
   respectively.
 
----
 
-## Example 1 — ggplot2 figure with `pharma_layout_base()`
+## Example with a ggplot2 figure
 
 This mirrors the pharma layout example shown in the
 [Simple Examples](simple_examples.html) vignette, wrapped in a Shiny
@@ -89,9 +86,7 @@ server <- function(input, output, session) {
 shinyApp(ui, server)
 ```
 
----
-
-## Example 2 — `rtable` table
+## Example with an `rtables` object
 
 `gridify` supports `rtables` objects directly — the conversion is handled internally.
 Pass the `rtable` straight to `gridify()` just like any other object type.
